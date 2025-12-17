@@ -11,20 +11,34 @@ const AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
 const META_API_VERSION = "v19.0";
 const BASE_URL = `https://graph.facebook.com/${META_API_VERSION}`;
 
+/**
+ * Health check
+ */
 app.get("/", (req, res) => {
   res.send("JobWave backend is running 🚀");
 });
 
+/**
+ * Publish campaign
+ */
 app.post("/publish-campaign", async (req, res) => {
+  console.log("🚀 Publish campaign called");
+  console.log("📦 Request body:", req.body);
+
   try {
     const { company_name } = req.body;
 
     if (!company_name) {
+      console.log("❌ company_name ontbreekt");
       return res.status(400).json({ error: "company_name ontbreekt" });
     }
 
-    // 1. Campaign
-    const campaignRes = await fetch(
+    /* ======================
+       1. CREATE CAMPAIGN
+    ====================== */
+    console.log("➡️ Creating Meta campaign...");
+
+    const campaignResponse = await fetch(
       `${BASE_URL}/act_${AD_ACCOUNT_ID}/campaigns`,
       {
         method: "POST",
@@ -41,13 +55,23 @@ app.post("/publish-campaign", async (req, res) => {
       }
     );
 
-    const campaignData = await campaignRes.json();
+    const campaignData = await campaignResponse.json();
+    console.log("📩 Campaign response:", campaignData);
+
     if (!campaignData.id) {
-      return res.status(500).json(campaignData);
+      console.log("❌ Campaign creation failed");
+      return res.status(500).json({
+        error: "Campaign aanmaken mislukt",
+        meta_error: campaignData
+      });
     }
 
-    // 2. Ad set (tijdelijk LANDelijk, vaste waarden)
-    const adSetRes = await fetch(
+    /* ======================
+       2. CREATE AD SET
+    ====================== */
+    console.log("➡️ Creating Ad set...");
+
+    const adSetResponse = await fetch(
       `${BASE_URL}/act_${AD_ACCOUNT_ID}/adsets`,
       {
         method: "POST",
@@ -58,7 +82,7 @@ app.post("/publish-campaign", async (req, res) => {
         body: JSON.stringify({
           name: `${company_name} – Adset 1`,
           campaign_id: campaignData.id,
-          daily_budget: 1000,
+          daily_budget: 1000, // €10 per dag
           billing_event: "IMPRESSIONS",
           optimization_goal: "LEAD_GENERATION",
           bid_strategy: "LOWEST_COST_WITHOUT_CAP",
@@ -70,10 +94,18 @@ app.post("/publish-campaign", async (req, res) => {
       }
     );
 
-    const adSetData = await adSetRes.json();
+    const adSetData = await adSetResponse.json();
+    console.log("📩 Ad set response:", adSetData);
+
     if (!adSetData.id) {
-      return res.status(500).json(adSetData);
+      console.log("❌ Ad set creation failed");
+      return res.status(500).json({
+        error: "Ad set aanmaken mislukt",
+        meta_error: adSetData
+      });
     }
+
+    console.log("✅ Campaign + Ad set created");
 
     return res.json({
       success: true,
@@ -82,6 +114,22 @@ app.post("/publish-campaign", async (req, res) => {
     });
 
   } catch (err) {
+    console.error("❌ UNEXPECTED ERROR:", err);
+    return res.status(500).json({
+      error: "Backend error",
+      details: err.message
+    });
+  }
+});
+
+/**
+ * Start server
+ */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
     return res.status(500).json({ error: err.message });
   }
 });
