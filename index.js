@@ -26,7 +26,6 @@ app.post("/publish-campaign", async (req, res) => {
       return res.status(400).json({ error: "company_name ontbreekt" });
     }
 
-    // 1. CREATE CAMPAIGN (BELANGRIJK: act_)
     const campaignResponse = await fetch(
       `https://graph.facebook.com/${META_API_VERSION}/act_${META_AD_ACCOUNT_ID}/campaigns`,
       {
@@ -37,7 +36,7 @@ app.post("/publish-campaign", async (req, res) => {
         },
         body: JSON.stringify({
           name: `${company_name} – Vacaturecampagne`,
-          objective: "LEAD_GENERATION",
+          objective: "OUTCOME_LEADS",
           special_ad_categories: ["EMPLOYMENT"],
           status: "PAUSED"
         })
@@ -73,4 +72,5 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
 
