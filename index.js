@@ -38,7 +38,8 @@ app.post("/publish-campaign", async (req, res) => {
           name: `${company_name} – Vacaturecampagne`,
           objective: "OUTCOME_LEADS",
           special_ad_categories: ["EMPLOYMENT"],
-          status: "PAUSED"
+          status: "PAUSED",
+          is_adset_budget_sharing_enabled: false
         })
       }
     );
